@@ -8,7 +8,11 @@ app = Flask(__name__)
 @app.route("/")
 def hello_world():
     data = fetch.get_df()
-    plt.scatter(data['end_times'],data['impressions'])
+    plt.plot(data['end_times'],data['impressions'])
+    plt.title("@studentsforhans IG impressions this week")
+    plt.xlabel("date")
+    plt.ylabel("impressions")
+    # REMEMBER IT's END TIME T7????
     plt.savefig("static/graph.png")
     plt.close() 
     return render_template("fig.html")

@@ -33,17 +33,19 @@ def fetch_insights():
 
     imps = []
     dates = []
-    while data['data'][0]['values'][0]['value'] > 0:
+    i = 0
+    while i < 4:
         imps.append(data['data'][0]['values'][1]['value'])
         imps.append(data['data'][0]['values'][0]['value'])
-        dates.append(data['data'][0]['values'][1]['end_time'])
-        dates.append(data['data'][0]['values'][0]['end_time'])
+        dates.append(data['data'][0]['values'][1]['end_time'].split("T")[0].split("022-")[1])
+        dates.append(data['data'][0]['values'][0]['end_time'].split("T")[0].split("022-")[1])
         data = json.loads(requests.get(data['paging']['previous']).content)
+        i+=1
 
     df = pd.DataFrame()
-    df['impressions'] = imps
-    df['end_times'] = dates
-    df['end_times'] = df['end_times'].apply(lambda x : x.split("T")[0])
+    df['impressions'] = imps[::-1]
+    df['end_times'] = dates[::-1]
+    #df['end_times'] = df['end_times'].apply(lambda x : x.split("T")[0])
     return df
 
 def get_df():
