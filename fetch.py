@@ -4,6 +4,8 @@ import json
 #import datetime
 import pandas as pd
 from os import environ
+import numpy as np
+import matplotlib.pyplot as plt
 
 def define_params():
     params = dict()
@@ -18,35 +20,47 @@ def define_params():
     params['page_id'] = environ.get("FB_PAGE_ID")
     return params
 
-def fetch_insights():
+def fetch_insights(metric):
     params = define_params()
     url = params['endpoint_base'] + params['instagram_account_id'] + '/insights'
     endpointParams = dict()
     #endpointParams['fields'] = ['caption', 'like_count', 'comments']
-    endpointParams['metric'] = ['impressions']
+    endpointParams['metric'] = [metric]
     endpointParams['period'] = ['day']
     endpointParams['access_token'] = params['access_token']
 
     # Requests Data
     req = requests.get(url, endpointParams )
     data = json.loads(req.content)
-
-    imps = []
+    desc = data['data'][0]['description']
+    vals = []
     dates = []
     i = 0
     while i < 4:
-        imps.append(data['data'][0]['values'][1]['value'])
-        imps.append(data['data'][0]['values'][0]['value'])
+        vals.append(data['data'][0]['values'][1]['value'])
+        vals.append(data['data'][0]['values'][0]['value'])
         dates.append(data['data'][0]['values'][1]['end_time'].split("T")[0].split("022-")[1])
         dates.append(data['data'][0]['values'][0]['end_time'].split("T")[0].split("022-")[1])
         data = json.loads(requests.get(data['paging']['previous']).content)
         i+=1
 
     df = pd.DataFrame()
-    df['impressions'] = imps[::-1]
+    df['vals'] = vals[::-1]
     df['end_times'] = dates[::-1]
     #df['end_times'] = df['end_times'].apply(lambda x : x.split("T")[0])
-    return df
+    return df, desc
 
-def get_df():
-    return fetch_insights()
+def make_plots():
+    metrics = ['impressions', 'reach', 'profile_views']
+    for met in metrics:
+        #plt.ioff()
+        data, desc = fetch_insights(met)
+        desc = desc.replace("number of","#").split(" the Business Account's ")
+        plt.plot(data['end_times'],data['vals'])
+        plt.title(desc[0] + " @studentsforhans " + desc[1])
+        plt.xlabel("date")
+        plt.ylabel(met)
+        # REMEMBER IT's END TIME T7????
+        plt.savefig("static/" + met + ".jpg")
+        plt.close() 
+    return metrics
