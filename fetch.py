@@ -49,11 +49,11 @@ def fetch_insights(metric):
     df['end_times'] = dates[::-1]
     return df, desc
 
-def demog_insights():
+def cat_insights(metric):
     params = define_params()
     url = params['endpoint_base'] + params['instagram_account_id'] + '/insights'
     endpointParams = dict()
-    endpointParams['metric'] = ['audience_gender_age']
+    endpointParams['metric'] = [metric]
     endpointParams['period'] = ['lifetime']
     endpointParams['access_token'] = params['access_token']
     data = json.loads(requests.get(url, endpointParams).content)
@@ -62,24 +62,31 @@ def demog_insights():
     return info
 
 def make_plots():
-    metrics = ['impressions', 'reach', 'profile_views']
+    metrics = ['impressions', 'reach', 'profile_views', 'follower_count']
     for met in metrics:
         #plt.ioff()
         data, desc = fetch_insights(met)
-        desc = desc.replace("number of","#").split(" the Business Account's ")
+        #desc = desc.replace("number of","#").split(" the Business Account's ")
         plt.plot(data['end_times'],data['vals'])
-        plt.title(desc[0] + " @studentsforhans " + desc[1])
+        #plt.title(desc[0] + " @studentsforhans " + desc[1])
+        plt.title(desc)
         plt.xlabel("date")
         plt.ylabel(met)
         # REMEMBER IT's END TIME T7????
         plt.savefig("static/" + met + ".jpg")
         plt.close()
-    demog = demog_insights()
-    plt.barh(list(demog.keys()), demog.values())
-    plt.title("Followers by Gender and Age")
-    plt.xlabel("followers")
-    plt.ylabel("group")
-    plt.savefig("static/" + "demog" + ".jpg")
-    plt.close()
-    metrics.append('demog')
-    return metrics
+    metrics2 = ['audience_gender_age', 'audience_city']
+    for met in metrics2:
+        demog = cat_insights(met)
+        ks = list(demog.keys())
+        for x in ks:
+            demog[x.replace(", Maryland", "")] = demog.pop(x)
+        demog = dict(sorted(demog.items(), key=lambda x: x[1]))
+        plt.rc('ytick', labelsize=5) 
+        plt.barh(list(demog.keys()), demog.values())
+        plt.title(met)
+        plt.xlabel("followers")
+        plt.ylabel("group")
+        plt.savefig("static/" + met + ".jpg")
+        plt.close()
+    return metrics + metrics2
