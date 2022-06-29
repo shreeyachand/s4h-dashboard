@@ -82,11 +82,37 @@ def make_plots():
         for x in ks:
             demog[x.replace(", Maryland", "")] = demog.pop(x)
         demog = dict(sorted(demog.items(), key=lambda x: x[1]))
-        plt.rc('ytick', labelsize=5) 
+        plt.rc('ytick', labelsize=7) 
         plt.barh(list(demog.keys()), demog.values())
         plt.title(met)
         plt.xlabel("followers")
         plt.ylabel("group")
-        plt.savefig("static/" + met + ".jpg")
+        plt.savefig("static/" + met + ".jpg",bbox_inches='tight')
         plt.close()
     return metrics + metrics2
+
+def post_engagement():
+    params = define_params()
+    url = params['endpoint_base'] + params['instagram_account_id'] + '/media'
+    endpointParams = dict()
+    endpointParams['fields'] = ['caption']
+    endpointParams['access_token'] = params['access_token']
+    data = requests.get(url, endpointParams )
+    media = json.loads(data.content)
+    rates = []
+    for i in media['data']:
+        url = params['endpoint_base'] + i['id'] + '/insights'
+        endpointParams = dict()
+        endpointParams['metric'] = 'reach,engagement'
+        endpointParams['access_token'] = params['access_token']
+        data = requests.get(url, endpointParams)
+        p = json.loads(data.content)
+        if 'data' in p.keys() and p['data'][0]['values'][0]['value'] > 0:
+            rates.append([ p['data'][1]['values'][0]['value']/p['data'][0]['values'][0]['value'], i['caption'][:15]])
+    df = pd.DataFrame(rates[::-1],columns=["eng_rate", "caption"])
+    plt.plot(df['eng_rate'])
+    plt.xticks(list(range(len(df))),df['caption'],rotation=90)
+    plt.xlabel('caption')
+    plt.ylabel('engagement rate (likes+comments/# unique views)')
+    plt.savefig("static/" + 'eng_rate' + ".jpg", bbox_inches='tight')
+    plt.close()

@@ -9,3 +9,8 @@ app = Flask(__name__)
 def home():
     mets = fetch.make_plots()
     return render_template("fig.html", metrics=mets)
+
+@app.route("/post_engagement")
+def eng():
+    fetch.post_engagement()
+    return render_template("eng.html")
